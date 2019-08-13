@@ -12,6 +12,7 @@ export default class Cursor {
   private startPositions: Position[] = [];
   private ignore: boolean = false;
   private subscriptions: Disposable[] = [];
+  private lastCommand: string | null = null;
 
   constructor() {}
 
@@ -21,9 +22,9 @@ export default class Cursor {
 
   public goHome(cursorHomeCommand: string, cursorTopCommand: string) {
     const firstPosition = this.getPositions()[0];
-
-    if (!this.isActive) {
-      this.enterSeqMode();
+    const isActive = this.isActive("goHome");
+    if (!isActive) {
+      this.enterSeqMode("goHome");
     }
 
     if (firstPosition.isEqual(new Position(0, 0))) {
@@ -39,8 +40,12 @@ export default class Cursor {
 
   public goEnd(cursorEndCommand: string, cursorBottomCommand: string) {
     const firstPosition = this.getPositions()[0];
+    const isActive = this.isActive("goEnd");
+    if (!isActive) {
+      this.enterSeqMode("goEnd");
+    }
 
-    if (this.isActive) {
+    if (isActive) {
       if (this.isBottom(firstPosition)) {
         return this.goReturn();
       }
@@ -48,7 +53,6 @@ export default class Cursor {
       return this.executeCursorMoveCommand(cursorBottomCommand);
     }
 
-    this.enterSeqMode();
     return this.executeCursorMoveCommand(cursorEndCommand);
   }
 
@@ -76,8 +80,8 @@ export default class Cursor {
     this.ignore = false;
   }
 
-  private get isActive() {
-    return this.startPositions.length > 0;
+  private isActive(command: string) {
+    return this.lastCommand === command && this.startPositions.length > 0;
   }
 
   private isBottom(position: Position): boolean {
@@ -102,10 +106,11 @@ export default class Cursor {
     return window.activeTextEditor as TextEditor;
   }
 
-  private enterSeqMode() {
+  private enterSeqMode(command: string) {
     this.startPositions = this.getPositions();
     this.subscriptions.push(window.onDidChangeTextEditorSelection(this.reset));
     this.subscriptions.push(window.onDidChangeActiveTextEditor(this.reset));
+    this.lastCommand = command;
   }
 
   private exitSeqMode() {
@@ -114,5 +119,6 @@ export default class Cursor {
     });
     this.subscriptions = [];
     this.startPositions = [];
+    this.lastCommand = null;
   }
 }
