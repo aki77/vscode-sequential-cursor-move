@@ -4,6 +4,7 @@
   "publisher": "aki77",
   "description": "Many movement commands into one command.",
   "version": "0.1.3",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.37.0"
   },
